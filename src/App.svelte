@@ -1,47 +1,103 @@
 <script>
-  import svelteLogo from './assets/svelte.svg'
-  import viteLogo from '/vite.svg'
-  import Counter from './lib/Counter.svelte'
+  import { onMount } from "svelte";
+
+  const locationsData = {
+    Electrician_Locator: [
+      { lat: 51.508742, lng: -0.12085, title: "Location 1" },
+      { lat: 40.7128, lng: -74.006, title: "Location 3 (New York)" },
+    ],
+    Shop_Locator: [{ lat: 48.8566, lng: 2.3522, title: "Location 2 (Paris)" }],
+  };
+  let Locator = locationsData.Electrician_Locator;
+  let map;
+  let activeTab = "Electrician_Locator";
+  let markers = [];
+
+  window.myMap = () => {
+    const mapProp = {
+      center: new google.maps.LatLng(51.508742, -0.12085),
+      zoom: 7,
+    };
+    map = new google.maps.Map(document.getElementById("map"), mapProp);
+    addMarkers();
+  };
+
+  function addMarkers() {
+    markers.forEach((marker) => marker.setMap(null));
+    markers = [];
+
+    Locator.forEach((location) => {
+      const marker = new google.maps.Marker({
+        position: new google.maps.LatLng(location.lat, location.lng),
+        map: map,
+        title: location.title,
+      });
+      markers.push(marker);
+    });
+  }
+
+  function changeTab(tab) {
+    activeTab = tab;
+    Locator = locationsData[tab];
+    addMarkers();
+  }
+
+  onMount(() => {
+    if (typeof google === "undefined") {
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=&callback=myMap`;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    } else {
+      myMap();
+    }
+  });
 </script>
 
-<main>
-  <div>
-    <a href="https://vite.dev" target="_blank" rel="noreferrer">
-      <img src={viteLogo} class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
+<div id="map" class="map-container"></div>
+
+<div class="tab-container">
+  <div
+    class="tab {activeTab === 'Electrician_Locator' ? 'active' : ''}"
+    on:click={() => changeTab("Electrician_Locator")}
+  >
+    Electrician Locator
   </div>
-  <h1>Vite + Svelte</h1>
-
-  <div class="card">
-    <Counter />
+  <div
+    class="tab {activeTab === 'Shop_Locator' ? 'active' : ''}"
+    on:click={() => changeTab("Shop_Locator")}
+  >
+    Shop Locator
   </div>
-
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme" target="_blank" rel="noreferrer">SvelteKit</a>, the official Svelte app framework powered by Vite!
-  </p>
-
-  <p class="read-the-docs">
-    Click on the Vite and Svelte logos to learn more
-  </p>
-</main>
+</div>
 
 <style>
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
+  #map {
+    width: 100%;
+    height: 50vh;
   }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
+  .tab-container {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    gap: 20px;
+    z-index: 1;
   }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
+  .tab {
+    padding: 8px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    font-weight: normal;
   }
-  .read-the-docs {
-    color: #888;
+  .active {
+    border-bottom: 2px solid blue;
+    font-weight: bold;
+    color: blue;
   }
 </style>
