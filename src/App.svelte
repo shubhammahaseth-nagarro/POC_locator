@@ -3,23 +3,29 @@
 
   const locationsData = {
     Electrician_Locator: [
-      { lat: 51.508742, lng: -0.12085, title: "Location 1" },
-      { lat: 40.7128, lng: -74.006, title: "Location 3 (New York)" },
+      { lat: 28.7041, lng: 77.1025, title: "Delhi" },
+      { lat: 19.076, lng: 72.8777, title: "Mumbai" },
     ],
-    Shop_Locator: [{ lat: 48.8566, lng: 2.3522, title: "Location 2 (Paris)" }],
+    Shop_Locator: [
+      { lat: 13.0827, lng: 80.2707, title: "Chennai" },
+      { lat: 22.5726, lng: 88.3639, title: "Kolkata" },
+    ],
   };
+  
   let Locator = locationsData.Electrician_Locator;
   let map;
   let activeTab = "Electrician_Locator";
   let markers = [];
+  let autocomplete;
 
   window.myMap = () => {
     const mapProp = {
-      center: new google.maps.LatLng(51.508742, -0.12085),
-      zoom: 7,
+      center: new google.maps.LatLng(20.5937, 78.9629), // Center map on India
+      zoom: 5,
     };
     map = new google.maps.Map(document.getElementById("map"), mapProp);
     addMarkers();
+    initAutocomplete();
   };
 
   function addMarkers() {
@@ -42,10 +48,27 @@
     addMarkers();
   }
 
+  function initAutocomplete() {
+    const input = document.getElementById("location-search");
+    const options = {
+      componentRestrictions: { country: "in" }, // Restrict to India
+      fields: ["geometry", "name"],
+    };
+    autocomplete = new google.maps.places.Autocomplete(input, options);
+    
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+      if (place.geometry && place.geometry.location) {
+        map.setCenter(place.geometry.location);
+        map.setZoom(12);
+      }
+    });
+  }
+
   onMount(() => {
     if (typeof google === "undefined") {
       const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=&callback=myMap`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=&libraries=places&callback=myMap`;
       script.async = true;
       script.defer = true;
       document.head.appendChild(script);
@@ -72,6 +95,14 @@
   </div>
 </div>
 
+<div class="search-container">
+  <input
+    id="location-search"
+    type="text"
+    placeholder="Enter pincode or address"
+  />
+</div>
+
 <style>
   #map {
     width: 100%;
@@ -82,6 +113,7 @@
     left: 50%;
     transform: translateX(-50%);
     background-color: white;
+    color: black;
     padding: 10px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
@@ -99,5 +131,24 @@
     border-bottom: 2px solid blue;
     font-weight: bold;
     color: blue;
+  }
+  .search-container {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    background-color: white;
+    padding: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    z-index: 1;
+  }
+  #location-search {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
   }
 </style>
