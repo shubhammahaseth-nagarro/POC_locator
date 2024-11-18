@@ -1,6 +1,5 @@
 <script>
   import { onMount } from "svelte";
-
   const locationsData = {
     Electrician_Locator: [
       { lat: 28.7041, lng: 77.1025, title: "Delhi" },
@@ -11,7 +10,7 @@
       { lat: 22.5726, lng: 88.3639, title: "Kolkata" },
     ],
   };
-  
+
   let Locator = locationsData.Electrician_Locator;
   let map;
   let activeTab = "Electrician_Locator";
@@ -55,7 +54,7 @@
       fields: ["geometry", "name"],
     };
     autocomplete = new google.maps.places.Autocomplete(input, options);
-    
+
     autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
       if (place.geometry && place.geometry.location) {
@@ -68,7 +67,7 @@
   onMount(() => {
     if (typeof google === "undefined") {
       const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=&libraries=places&callback=myMap`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAP_KEY}&libraries=places&callback=myMap`;
       script.async = true;
       script.defer = true;
       document.head.appendChild(script);
