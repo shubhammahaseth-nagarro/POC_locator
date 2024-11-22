@@ -63,8 +63,22 @@
         map: map,
         title: location.title,
       });
+
+      marker.addListener("click", () => {
+        map.setZoom(12);
+        map.setCenter(marker.getPosition());
+      });
+
       markers.push(marker);
     });
+  }
+
+  function zoomToMarker(index) {
+    const marker = markers[index];
+    if (marker) {
+      map.setCenter(marker.getPosition());
+      map.setZoom(12);
+    }
   }
 
   function changeTab(tab) {
@@ -178,8 +192,12 @@
         : "Shops"}:
     </h3>
     <ul>
-      {#each locationsList as loc}
-        <li>
+      {#each locationsList as loc, i}
+        <li
+          class="location-item"
+          data-index={i}
+          on:click={() => zoomToMarker(i)}
+        >
           <strong>{loc.name || "Unknown Name"}</strong><br />
           {loc.address || "Unknown Address"}
         </li>
@@ -306,5 +324,18 @@
   .results-container li strong {
     display: block;
     color: #007bff;
+  }
+
+  .location-item {
+    cursor: pointer;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    transition: background-color 0.3s ease;
+  }
+
+  .location-item:hover {
+    background-color: #f1f1f1;
   }
 </style>
