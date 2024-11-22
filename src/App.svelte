@@ -1,21 +1,15 @@
 <script>
   import { onMount } from "svelte";
-  const locationsData = {
-    Electrician_Locator: [
-      { lat: 28.7041, lng: 77.1025, title: "Delhi" },
-      { lat: 19.076, lng: 72.8777, title: "Mumbai" },
-    ],
-    Shop_Locator: [
-      { lat: 13.0827, lng: 80.2707, title: "Chennai" },
-      { lat: 22.5726, lng: 88.3639, title: "Kolkata" },
-    ],
-  };
 
-  let Locator = locationsData.Electrician_Locator;
+  let Locator;
   let map;
   let activeTab = "Electrician_Locator";
   let markers = [];
   let autocomplete;
+  let locationsList = [];
+
+  // API base URL
+  const API_BASE_URL = "https://electrician-poc-backend.vercel.app/api/stores";
 
   window.myMap = () => {
     const mapProp = {
@@ -23,9 +17,41 @@
       zoom: 5,
     };
     map = new google.maps.Map(document.getElementById("map"), mapProp);
-    addMarkers();
+    fetchLocations("electrician");
     initAutocomplete();
   };
+
+  async function fetchLocations(role, pincode = "", radius = "") {
+    try {
+      const url = new URL(API_BASE_URL);
+      if (pincode) url.searchParams.append("pincode", pincode);
+      url.searchParams.append("role", role);
+      if (radius) url.searchParams.append("radius", radius);
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data[0]?.location) {
+        Locator = data?.map((loc) => ({
+          lat: loc.location.coordinates[1],
+          lng: loc.location.coordinates[0],
+          title: loc.address || "Unknown",
+        }));
+        locationsList = data;
+        addMarkers();
+      } else if (!data?.stores?.length) {
+        locationsList = [];
+        alert("No stores found!");
+      } else {
+        console.error(
+          "Failed to fetch locations:",
+          data.message || "Unknown error"
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+    }
+  }
 
   function addMarkers() {
     markers.forEach((marker) => marker.setMap(null));
@@ -43,14 +69,23 @@
 
   function changeTab(tab) {
     activeTab = tab;
-    Locator = locationsData[tab];
-    addMarkers();
+    const role = tab === "Electrician_Locator" ? "electrician" : "shop";
+    Locator = [];
+    locationsList = [];
+    markers.forEach((marker) => marker.setMap(null));
+    markers = [];
+    map.setZoom(5);
+    map.setCenter(new google.maps.LatLng(20.5937, 78.9629));
+    document.getElementById("location-search").value = "";
+    document.getElementById("radius-input").value = "";
+    fetchLocations(role);
   }
 
   function initAutocomplete() {
     const input = document.getElementById("location-search");
+    const radiusInput = document.getElementById("radius-input");
     const options = {
-      componentRestrictions: { country: "in" }, // Restrict to India
+      // componentRestrictions: { country: "in" }, // Restrict to India
       fields: ["geometry", "name"],
     };
     autocomplete = new google.maps.places.Autocomplete(input, options);
@@ -58,10 +93,41 @@
     autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
       if (place.geometry && place.geometry.location) {
-        map.setCenter(place.geometry.location);
+        const { lat, lng } = place.geometry.location.toJSON();
+        map.setCenter(new google.maps.LatLng(lat, lng));
         map.setZoom(12);
+        const radius = radiusInput?.value || "";
+        fetchLocations(
+          activeTab === "Electrician_Locator" ? "electrician" : "shop",
+          place.name,
+          radius
+        );
       }
     });
+  }
+
+  function extractPincode(address) {
+    const pincodeRegex = /\b\d{6}\b/;
+    const match = address.match(pincodeRegex);
+    return match ? match[0] : "";
+  }
+
+  function handleSearch() {
+    const input = document.getElementById("location-search");
+    const radiusInput = document.getElementById("radius-input");
+    const address = input.value.trim();
+    const pincode = extractPincode(address);
+    const radius = radiusInput.value.trim();
+
+    if (pincode) {
+      fetchLocations(
+        activeTab === "Electrician_Locator" ? "electrician" : "shop",
+        pincode,
+        radius
+      );
+    } else {
+      alert("Please enter a valid pincode or address.");
+    }
   }
 
   onMount(() => {
@@ -100,54 +166,145 @@
     type="text"
     placeholder="Enter pincode or address"
   />
+  <input id="radius-input" type="text" placeholder="Enter radius (optional)" />
+  <button on:click={handleSearch}>Search</button>
+</div>
+
+<div class="results-container">
+  {#if locationsList.length > 0}
+    <h3>
+      Available {activeTab === "Electrician_Locator"
+        ? "Electricians"
+        : "Shops"}:
+    </h3>
+    <ul>
+      {#each locationsList as loc}
+        <li>
+          <strong>{loc.name || "Unknown Name"}</strong><br />
+          {loc.address || "Unknown Address"}
+        </li>
+      {/each}
+    </ul>
+  {:else}
+    <p>No locations to display.</p>
+  {/if}
 </div>
 
 <style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+  }
   #map {
     width: 100%;
     height: 50vh;
   }
+
   .tab-container {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: white;
-    color: black;
-    padding: 10px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     display: flex;
-    gap: 20px;
-    z-index: 1;
+    justify-content: center;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   }
+
   .tab {
-    padding: 8px 16px;
+    padding: 10px 20px;
     cursor: pointer;
     border-bottom: 2px solid transparent;
-    font-weight: normal;
-  }
-  .active {
-    border-bottom: 2px solid blue;
-    font-weight: bold;
-    color: blue;
-  }
-  .search-container {
-    position: absolute;
-    bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    background-color: white;
-    padding: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    z-index: 1;
-  }
-  #location-search {
-    width: 100%;
-    padding: 8px;
     font-size: 16px;
-    border: 1px solid #ccc;
+    transition:
+      color 0.3s ease,
+      border-color 0.3s ease;
+  }
+
+  .tab:hover {
+    color: #007bff;
+  }
+
+  .active {
+    border-bottom: 2px solid #007bff;
+    font-weight: bold;
+    color: #007bff;
+  }
+
+  .search-container {
+    margin: 20px auto;
+    padding: 15px 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    max-width: 800px;
+  }
+
+  #location-search,
+  #radius-input {
+    flex: 1;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ddd;
     border-radius: 4px;
+    outline: none;
+    transition: border-color 0.3s ease;
+  }
+
+  #location-search:focus,
+  #radius-input:focus {
+    border-color: #007bff;
+  }
+
+  button {
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  button:hover {
+    background-color: #0056b3;
+  }
+
+  .results-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .results-container h3 {
+    margin-bottom: 10px;
+    font-size: 18px;
+    color: #333;
+  }
+
+  .results-container ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .results-container li {
+    margin-bottom: 10px;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .results-container li strong {
+    display: block;
+    color: #007bff;
   }
 </style>
