@@ -78,6 +78,7 @@
     if (marker) {
       map.setCenter(marker.getPosition());
       map.setZoom(12);
+      scrollToTop()
     }
   }
 
@@ -143,6 +144,15 @@
       alert("Please enter a valid pincode or address.");
     }
   }
+
+  // Function to scroll to the top
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  };
+
 
   onMount(() => {
     if (typeof google === "undefined") {
