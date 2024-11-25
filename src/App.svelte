@@ -208,7 +208,7 @@
           data-index={i}
           on:click={() => zoomToMarker(i)}
         >
-          <strong>{loc.name || "Unknown Name"}</strong><br />
+          <strong>{loc.name || "Unknown Name"} - {loc?.distanceInKm} km</strong> <br />
           {loc.address || "Unknown Address"}
         </li>
       {/each}
