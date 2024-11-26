@@ -39,7 +39,7 @@
         }));
         locationsList = data;
         let zoom = 12;
-        if(radius > 250){
+        if(parseInt(radius) > 250){
           zoom = 6
         }
         addMarkers(zoom);
