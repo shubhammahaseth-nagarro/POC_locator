@@ -48,6 +48,7 @@
         }
       } else if (!data?.stores?.length) {
         locationsList = [];
+        Locator= [];
         addMarkers();
         alert("No stores found!");
       } else {
