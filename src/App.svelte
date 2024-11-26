@@ -38,11 +38,14 @@
           title: loc.address || "Unknown",
         }));
         locationsList = data;
-        let zoom = 12;
-        if(parseInt(radius) > 250){
-          zoom = 6
+        addMarkers();
+        if (parseInt(radius) > 250) {
+          const bounds = new google.maps.LatLngBounds();
+          Locator.forEach((location) =>
+            bounds.extend(new google.maps.LatLng(location.lat, location.lng))
+          );
+          map.fitBounds(bounds);
         }
-        addMarkers(zoom);
       } else if (!data?.stores?.length) {
         locationsList = [];
         alert("No stores found!");
@@ -57,7 +60,7 @@
     }
   }
 
-  function addMarkers(zoom) {
+  function addMarkers() {
     markers.forEach((marker) => marker.setMap(null));
     markers = [];
 
@@ -69,7 +72,7 @@
       });
 
       marker.addListener("click", () => {
-        map.setZoom(zoom);
+        map.setZoom(12);
         map.setCenter(marker.getPosition());
       });
 
