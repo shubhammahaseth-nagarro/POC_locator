@@ -8,7 +8,9 @@
   let activeTab = "Electrician_Locator";
   let markers = [];
   let autocomplete;
-  let locationsList = []; 
+  let locationsList = [];
+  let selectedCategory = "";
+
   // API base URL
   const API_BASE_URL = "https://electrician-poc-backend.vercel.app/api/stores";
 
@@ -28,6 +30,8 @@
       if (pincode) url.searchParams.append("pincode", pincode);
       url.searchParams.append("role", role);
       if (radius) url.searchParams.append("radius", radius);
+      if (selectedCategory)
+        url.searchParams.append("category", selectedCategory);
 
       const response = await fetch(url);
       const data = await response.json();
@@ -49,7 +53,7 @@
         }
       } else if (!data?.stores?.length) {
         locationsList = [];
-        Locator= [];
+        Locator = [];
         addMarkers();
         alert("No stores found!");
       } else {
@@ -88,8 +92,22 @@
     if (marker) {
       map.setCenter(marker.getPosition());
       map.setZoom(12);
-      scrollToTop()
+      scrollToTop();
     }
+  }
+
+  function changeCategory(category) {
+    const input = document.getElementById("location-search");
+    const radiusInput = document.getElementById("radius-input");
+    const address = input.value.trim();
+    selectedCategory = category;
+    const pincode = extractPincode(address);
+    const radius = radiusInput.value.trim();
+    fetchLocations(
+      activeTab === "Electrician_Locator" ? "electrician" : "shop",
+      pincode,
+      radius
+    );
   }
 
   function changeTab(event) {
@@ -159,10 +177,9 @@
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: "smooth"
+      behavior: "smooth",
     });
   };
-
   onMount(() => {
     if (typeof google === "undefined") {
       const script = document.createElement("script");
@@ -179,6 +196,49 @@
 <div id="map" class="map-container"></div>
 
 <Tabs bind:activeTab={activeTab} on:tabChanged={changeTab}/>
+
+<div class="filter-container">
+  <label>
+    <input
+      type="radio"
+      name="category"
+      value=""
+      checked={selectedCategory === ""}
+      on:change={() => changeCategory("")}
+    />
+    All
+  </label>
+  <label>
+    <input
+      type="radio"
+      name="category"
+      value="platinum"
+      checked={selectedCategory === "platinum"}
+      on:change={() => changeCategory("platinum")}
+    />
+    Platinum
+  </label>
+  <label>
+    <input
+      type="radio"
+      name="category"
+      value="gold"
+      checked={selectedCategory === "gold"}
+      on:change={() => changeCategory("gold")}
+    />
+    Gold
+  </label>
+  <label>
+    <input
+      type="radio"
+      name="category"
+      value="silver"
+      checked={selectedCategory === "silver"}
+      on:change={() => changeCategory("silver")}
+    />
+    Silver
+  </label>
+</div>
 
 <div class="search-container">
   <input
@@ -245,5 +305,72 @@
 
   button:hover {
     background-color: #0056b3;
+  }
+
+  .results-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .results-container h3 {
+    margin-bottom: 10px;
+    font-size: 18px;
+    color: #333;
+  }
+
+  .results-container ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .results-container li {
+    margin-bottom: 10px;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .results-container li strong {
+    display: block;
+    color: #007bff;
+  }
+
+  .location-item {
+    cursor: pointer;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    transition: background-color 0.3s ease;
+  }
+
+  .location-item:hover {
+    background-color: #f1f1f1;
+  }
+
+  .filter-container {
+    margin: 20px auto;
+    padding: 10px 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .filter-container label {
+    cursor: pointer;
+    font-size: 16px;
+    color: #333;
+  }
+
+  .filter-container input[type="radio"] {
+    margin-right: 5px;
   }
 </style>
