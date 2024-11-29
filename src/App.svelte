@@ -1,13 +1,14 @@
 <script>
   import { onMount } from "svelte";
+  import Tabs from './lib/tabs.svelte';
+  import Results from "./lib/results.svelte";
 
   let Locator;
   let map;
   let activeTab = "Electrician_Locator";
   let markers = [];
   let autocomplete;
-  let locationsList = [];
-
+  let locationsList = []; 
   // API base URL
   const API_BASE_URL = "https://electrician-poc-backend.vercel.app/api/stores";
 
@@ -91,9 +92,9 @@
     }
   }
 
-  function changeTab(tab) {
-    activeTab = tab;
-    const role = tab === "Electrician_Locator" ? "electrician" : "shop";
+  function changeTab(event) {
+    activeTab = event.detail.activeTab;
+    const role = activeTab === "Electrician_Locator" ? "electrician" : "shop";
     Locator = [];
     locationsList = [];
     markers.forEach((marker) => marker.setMap(null));
@@ -162,7 +163,6 @@
     });
   };
 
-
   onMount(() => {
     if (typeof google === "undefined") {
       const script = document.createElement("script");
@@ -178,20 +178,7 @@
 
 <div id="map" class="map-container"></div>
 
-<div class="tab-container">
-  <div
-    class="tab {activeTab === 'Electrician_Locator' ? 'active' : ''}"
-    on:click={() => changeTab("Electrician_Locator")}
-  >
-    Electrician Locator
-  </div>
-  <div
-    class="tab {activeTab === 'Shop_Locator' ? 'active' : ''}"
-    on:click={() => changeTab("Shop_Locator")}
-  >
-    Shop Locator
-  </div>
-</div>
+<Tabs bind:activeTab={activeTab} on:tabChanged={changeTab}/>
 
 <div class="search-container">
   <input
@@ -203,31 +190,7 @@
   <button on:click={handleSearch}>Search</button>
 </div>
 
-<div class="results-container">
-  {#if locationsList.length > 0}
-    <h3>
-      Available {activeTab === "Electrician_Locator"
-        ? "Electricians"
-        : "Shops"}:
-    </h3>
-    <ul>
-      {#each locationsList as loc, i}
-        <li
-          class="location-item"
-          data-index={i}
-          on:click={() => zoomToMarker(i)}
-        >
-          <strong>{loc.name || "Unknown Name"} 
-                  {loc?.distanceInKm ? ` - ${loc.distanceInKm} km` : ""}
-          </strong> <br />
-          {loc.address || "Unknown Address"}
-        </li>
-      {/each}
-    </ul>
-  {:else}
-    <p>No locations to display.</p>
-  {/if}
-</div>
+<Results {locationsList} {activeTab} on:itemClicked={event => zoomToMarker(event.detail)}/>
 
 <style>
   body {
@@ -239,36 +202,6 @@
   #map {
     width: 100%;
     height: 50vh;
-  }
-
-  .tab-container {
-    display: flex;
-    justify-content: center;
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  }
-
-  .tab {
-    padding: 10px 20px;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    font-size: 16px;
-    transition:
-      color 0.3s ease,
-      border-color 0.3s ease;
-  }
-
-  .tab:hover {
-    color: #007bff;
-  }
-
-  .active {
-    border-bottom: 2px solid #007bff;
-    font-weight: bold;
-    color: #007bff;
   }
 
   .search-container {
@@ -312,51 +245,5 @@
 
   button:hover {
     background-color: #0056b3;
-  }
-
-  .results-container {
-    max-width: 800px;
-    margin: 20px auto;
-    padding: 20px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-
-  .results-container h3 {
-    margin-bottom: 10px;
-    font-size: 18px;
-    color: #333;
-  }
-
-  .results-container ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .results-container li {
-    margin-bottom: 10px;
-    font-size: 16px;
-    line-height: 1.5;
-  }
-
-  .results-container li strong {
-    display: block;
-    color: #007bff;
-  }
-
-  .location-item {
-    cursor: pointer;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    margin-bottom: 10px;
-    transition: background-color 0.3s ease;
-  }
-
-  .location-item:hover {
-    background-color: #f1f1f1;
   }
 </style>
