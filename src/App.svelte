@@ -178,7 +178,6 @@
       behavior: "smooth",
     });
   };
-
   onMount(() => {
     if (typeof google === "undefined") {
       const script = document.createElement("script");
@@ -279,6 +278,7 @@
           <strong
             >{loc.name || "Unknown Name"}
             {loc?.distanceInKm ? ` - ${loc.distanceInKm} km` : ""}
+
           </strong> <br />
           {loc.address || "Unknown Address"}
         </li>
